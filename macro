@@ -1,0 +1,51 @@
+Sub AutoReconciler()
+'
+' AutoReconciler Macro
+' Made by Zack, Jul. 1st 2020
+' Reconciles deposits to paycheques in book-keeping
+'
+    Dim rng As Range
+    Set rng = Application.InputBox("Select a target cell", "Obtain Range Object", Type:=8)
+    
+    Dim rng1 As Range
+    Set rng1 = Application.InputBox("Select a variable range", "Obtain Range Object", Type:=8)
+    
+    Dim inputData As Range
+    Set inputData = Application.InputBox("Enter a targeted value range", "Obtain number Object", Type:=8)
+    
+    Dim c As Range
+    
+    For n = 1 To inputData.Rows.Count
+    
+        Dim SelectCells As String
+        
+        SolverReset
+    
+        SolverOk SetCell:=rng.Address, MaxMinVal:=3, ValueOf:=inputData.Cells(inputData.Row + n - 1, 1), ByChange:=rng1.Address _
+           , Engine:=2, EngineDesc:="Simplex LP"
+        
+        SolverAdd CellRef:=rng1.Address, Relation:=5, FormulaText:="binary"
+    
+        SolverOk SetCell:=rng.Address, MaxMinVal:=3, ValueOf:=inputData.Cells(inputData.Row + n - 1, 1), ByChange:=rng1.Address _
+           , Engine:=2, EngineDesc:="Simplex LP"
+        
+        SolverSolve userFinish:=True
+    
+        Dim ctr As Integer
+        For Each c In rng1.Cells
+            If c.Value = 1 Then
+                SelectCells = SelectCells + CStr(c.Row)
+            End If
+        Next c
+       
+        Dim rw As Integer
+        Dim cl As Integer
+        Dim content As String
+        rw = (inputData.Row + n - 1)
+        cl = (inputData.Column - 1)
+        content = SelectCells
+        Cells(rw, cl).Value = content
+        
+    Next n
+    
+End Sub
