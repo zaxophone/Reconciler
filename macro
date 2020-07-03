@@ -3,6 +3,7 @@ Sub AutoReconciler()
 ' AutoReconciler Macro
 ' Made by Zack, Jul. 1st 2020
 ' Reconciles deposits to paycheques in book-keeping
+' revision 1.0.3_7-3-20
 '
     Dim rng As Range
     Set rng = Application.InputBox("Select a target cell", "Obtain Range Object", Type:=8)
@@ -14,38 +15,48 @@ Sub AutoReconciler()
     Set inputData = Application.InputBox("Enter a targeted value range", "Obtain number Object", Type:=8)
     
     Dim c As Range
+    Dim s As Range
+    Dim ctr As Integer
+    Dim cellsToExclude
+    Dim SelectCells As String
     
-    For n = 1 To inputData.Rows.Count
+    For Each s In inputData.Cells
     
-        Dim SelectCells As String
+        ctr = ctr + 1
+        
         
         SolverReset
     
-        SolverOk SetCell:=rng.Address, MaxMinVal:=3, ValueOf:=inputData.Cells(inputData.Row + n - 1, 1), ByChange:=rng1.Address _
+        SolverOk SetCell:=rng.Address, MaxMinVal:=3, ValueOf:=s.Value, ByChange:=rng1.Address _
            , Engine:=2, EngineDesc:="Simplex LP"
         
         SolverAdd CellRef:=rng1.Address, Relation:=5, FormulaText:="binary"
     
-        SolverOk SetCell:=rng.Address, MaxMinVal:=3, ValueOf:=inputData.Cells(inputData.Row + n - 1, 1), ByChange:=rng1.Address _
+        SolverOk SetCell:=rng.Address, MaxMinVal:=3, ValueOf:=s.Value, ByChange:=rng1.Address _
            , Engine:=2, EngineDesc:="Simplex LP"
         
         SolverSolve userFinish:=True
     
-        Dim ctr As Integer
+        SolverFinish keepFinal:=True
+        
+        
+        SelectCells = ""
         For Each c In rng1.Cells
             If c.Value = 1 Then
-                SelectCells = SelectCells + CStr(c.Row)
+                If SelectCells = "" Then
+                    SelectCells = CStr(c.Row)
+                Else
+                    SelectCells = (SelectCells + "," + CStr(c.Row))
+                End If
             End If
         Next c
-       
+        
         Dim rw As Integer
         Dim cl As Integer
-        Dim content As String
-        rw = (inputData.Row + n - 1)
+        rw = (inputData.Row + ctr - 1)
         cl = (inputData.Column - 1)
-        content = SelectCells
-        Cells(rw, cl).Value = content
+        Cells(rw, cl).Value = SelectCells
         
-    Next n
+    Next s
     
 End Sub
